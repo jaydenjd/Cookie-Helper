@@ -12,6 +12,7 @@ class CookieReport(BaseModel):
     url: str
     cookies: List[Cookie]
     timestamp: datetime
+    authorization: str
 
     class Config:
         json_schema_extra = {
@@ -25,12 +26,15 @@ class CookieReport(BaseModel):
                         "path": "/"
                     }
                 ],
-                "timestamp": "2024-03-14T12:00:00Z"
+                "timestamp": "2024-03-14T12:00:00Z",
+                "authorization": "your-token-here"
             }
         }
 
 class CookieReportInDB(CookieReport):
     id: int
+    client_ip: str
+    is_valid_token: bool
 
     class Config:
         from_attributes = True 

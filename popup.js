@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const enableSwitch = document.getElementById('enableSwitch');
   const refreshInterval = document.getElementById('refreshInterval');
   const reportUrl = document.getElementById('reportUrl');
+  const authorization = document.getElementById('authorization');
   const cookiePreview = document.getElementById('cookiePreview');
   const previewBtn = document.getElementById('previewBtn');
   const saveBtn = document.getElementById('saveBtn');
@@ -56,7 +57,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const defaultConfig = {
     enabled: false,
     interval: 60,
-    reportUrl: 'http://localhost:8000/api/cookies'
+    reportUrl: 'http://localhost:8000/api/cookies',
+    authorization: ''
   };
 
   // 加载保存的配置
@@ -67,6 +69,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   enableSwitch.checked = currentConfig.enabled;
   refreshInterval.value = currentConfig.interval;
   reportUrl.value = currentConfig.reportUrl;
+  authorization.value = currentConfig.authorization || '';
 
   // 格式化函数
   const formatters = {
@@ -802,7 +805,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const newConfig = {
       enabled: enableSwitch.checked,
       interval: parseInt(refreshInterval.value),
-      reportUrl: reportUrl.value
+      reportUrl: reportUrl.value,
+      authorization: authorization.value
     };
 
     try {
@@ -834,7 +838,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const newConfig = {
       enabled: enableSwitch.checked,
       interval: interval,
-      reportUrl: reportUrl.value
+      reportUrl: reportUrl.value,
+      authorization: authorization.value
     };
 
     try {
@@ -853,6 +858,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
       console.error('Auto-save config error:', error);
       showStatus('保存配置失败: ' + error.message, 'error');
+    }
+  });
+
+  // 授权改变时自动保存
+  authorization.addEventListener('change', async () => {
+    const newConfig = {
+      enabled: enableSwitch.checked,
+      interval: parseInt(refreshInterval.value),
+      reportUrl: reportUrl.value,
+      authorization: authorization.value
+    };
+
+    try {
+      await chrome.storage.local.set({ [hostname]: newConfig });
+      console.log('Auto-saved config for', hostname, ':', newConfig);
+
+      // 立即重启定时器以应用新的授权
+      chrome.runtime.sendMessage({
+        type: 'updateConfig',
+        hostname: hostname,
+        config: newConfig,
+        immediate: true  // 添加标志以指示立即生效
+      });
+
+      showStatus('授权已更新', 'success');
+    } catch (error) {
+      console.error('Auto-save config error:', error);
+      showStatus('保存授权失败: ' + error.message, 'error');
     }
   });
 

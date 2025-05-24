@@ -374,12 +374,21 @@
 
     .form-row {
       display: flex;
-      gap: 0.5rem;
-      margin-bottom: 0.5rem;
+      gap: 1rem;
+      align-items: flex-start;
     }
 
-    .form-row .input {
+    .auth-container {
+      flex: 2;
+    }
+
+    .interval-container {
       flex: 1;
+    }
+
+    .auth-container .input,
+    .interval-container .input {
+      width: 100%;
     }
 
     .checkbox-row {
@@ -415,8 +424,16 @@
     </div>
 
     <div class="form-group">
-      <label class="label">刷新间隔 (秒)</label>
-      <input type="number" id="refreshInterval" min="1" class="input" value="60">
+      <div class="form-row">
+        <div class="auth-container">
+          <label class="label">Authorization</label>
+          <input type="text" id="authorization" class="input" placeholder="请输入认证信息">
+        </div>
+        <div class="interval-container">
+          <label class="label">刷新间隔 (秒)</label>
+          <input type="number" id="refreshInterval" min="1" class="input" value="60">
+        </div>
+      </div>
     </div>
 
     <div class="form-group">

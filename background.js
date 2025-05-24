@@ -73,6 +73,7 @@ async function executeReport(hostname, config) {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
+              ...(config.authorization ? { 'Authorization': config.authorization } : {})
             },
             body: JSON.stringify(reportData)
           });

@@ -8,7 +8,11 @@ from datetime import datetime, timedelta
 from typing import List, Optional
 import json
 import logging
+from fastapi.exceptions import RequestValidationError
+import traceback
 
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import Header
 from . import models, schemas
 
 # 配置日志
@@ -28,77 +32,93 @@ templates = Jinja2Templates(directory="templates")
 async def startup_event():
     await models.init_db()
 
+security = HTTPBearer()
+
+# 这里可以替换为你的实际 token
+VALID_TOKEN = "your-secret-token"
+
+# 捕获 Pydantic 数据验证错误（422）
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    error_detail = {
+        "errors": exc.errors(),
+        # "body": exc.body,
+        "url": str(request.url),
+        # "method": request.method,
+        "headers": dict(request.headers)
+    }
+    logger.error(f"Validation error: {json.dumps(error_detail)}")
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors(), "body": exc.body},
+    )
+
+# 全局异常处理器
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    error_detail = {
+        "error_type": type(exc).__name__,
+        "error_message": str(exc),
+        "url": str(request.url),
+        "method": request.method,
+        "traceback": traceback.format_exc()
+    }
+    logger.error(f"Unhandled exception: {json.dumps(error_detail, indent=2)}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": error_detail},
+    )
+
+async def verify_token(authorization: str = Header(...)):
+    """
+    验证逻辑，检查 Bearer token 是否有效
+    """
+    # if not authorization.startswith("Bearer "):
+        # raise HTTPException(status_code=401, detail="Invalid authorization header format")
+    
+    token = authorization[7:]  # 去掉 "Bearer " 前缀
+    if authorization != VALID_TOKEN:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid authentication token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return authorization
+
 @app.post("/api/cookies")
 async def create_cookie_report(
-    request: Request,
+    report: schemas.CookieReport,
+    token: str = Depends(verify_token),
     db: AsyncSession = Depends(models.get_db)
 ):
     """
-    接收并存储 Cookie 报告
+    创建新的 Cookie 报告
+    需要有效的 Bearer token
     """
     try:
-        # 读取原始请求数据
-        raw_data = await request.json()
-        logger.debug(f"Received raw data: {raw_data}")
-
-        # 验证数据格式
-        if not isinstance(raw_data, dict):
-            raise HTTPException(status_code=400, detail="Invalid request format")
-
-        # 确保必要的字段存在
-        required_fields = ['url', 'cookies', 'timestamp']
-        for field in required_fields:
-            if field not in raw_data:
-                raise HTTPException(status_code=400, detail=f"Missing required field: {field}")
-
-        # 验证 cookies 列表
-        if not isinstance(raw_data['cookies'], list):
-            raise HTTPException(status_code=400, detail="Cookies must be a list")
-
-        # 解析时间戳
-        try:
-            timestamp = datetime.fromisoformat(raw_data['timestamp'].replace('Z', '+00:00'))
-        except ValueError as e:
-            logger.error(f"Error parsing timestamp: {e}")
-            raise HTTPException(status_code=400, detail="Invalid timestamp format")
-
-        # 创建数据库记录
         db_report = models.CookieReport(
-            url=raw_data['url'],
-            cookies=raw_data['cookies'],
-            timestamp=timestamp
+            url=report.url,
+            cookies=report.cookies,
+            timestamp=report.timestamp
         )
-        
-        logger.debug(f"Creating database record: {db_report.__dict__}")
-        
         db.add(db_report)
         await db.commit()
         await db.refresh(db_report)
-        
-        logger.info(f"Successfully saved cookie report for URL: {raw_data['url']}")
-        
-        return JSONResponse(content={
-            "id": db_report.id,
-            "url": db_report.url,
-            "cookies": db_report.cookies,
-            "timestamp": db_report.timestamp.isoformat()
-        })
-
-    except HTTPException as he:
-        logger.error(f"HTTP Exception: {he.detail}")
-        raise
+        return db_report
     except Exception as e:
-        logger.exception("Error processing cookie report")
+        logger.exception("Error creating cookie report")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/cookies", response_model=List[schemas.CookieReportInDB])
 async def get_cookie_reports(
+    token: str = Depends(verify_token),
     db: AsyncSession = Depends(models.get_db),
     url: Optional[str] = None,
     days: Optional[int] = None
 ):
     """
     获取 Cookie 报告列表，支持按 URL 和时间范围过滤
+    需要有效的 Bearer token
     """
     try:
         query = select(models.CookieReport)

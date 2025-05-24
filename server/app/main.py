@@ -9,6 +9,7 @@ from typing import List, Optional
 import json
 import logging
 from fastapi.exceptions import RequestValidationError
+import traceback
 
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import Header
@@ -39,9 +40,33 @@ VALID_TOKEN = "your-secret-token"
 # 捕获 Pydantic 数据验证错误（422）
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    error_detail = {
+        "errors": exc.errors(),
+        # "body": exc.body,
+        "url": str(request.url),
+        # "method": request.method,
+        "headers": dict(request.headers)
+    }
+    logger.error(f"Validation error: {json.dumps(error_detail)}")
     return JSONResponse(
         status_code=422,
         content={"detail": exc.errors(), "body": exc.body},
+    )
+
+# 全局异常处理器
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    error_detail = {
+        "error_type": type(exc).__name__,
+        "error_message": str(exc),
+        "url": str(request.url),
+        "method": request.method,
+        "traceback": traceback.format_exc()
+    }
+    logger.error(f"Unhandled exception: {json.dumps(error_detail, indent=2)}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": error_detail},
     )
 
 async def verify_token(authorization: str = Header(...)):

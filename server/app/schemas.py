@@ -31,9 +31,13 @@ class CookieReport(BaseModel):
             }
         }
 
-class CookieReportInDB(CookieReport):
+class CookieReportInDB(BaseModel):
     id: int
+    url: str
+    cookies: List[Dict]
+    timestamp: datetime
     client_ip: str
+    token: str
     is_valid_token: bool
 
     class Config:

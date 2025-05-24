@@ -28,7 +28,7 @@ AsyncSessionLocal = sessionmaker(
 # 创建数据库表
 async def init_db():
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+        # 只创建表，不删除现有数据
         await conn.run_sync(Base.metadata.create_all)
 
 # 获取数据库会话的依赖函数

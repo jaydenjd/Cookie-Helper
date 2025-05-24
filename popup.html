@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Cookie Reporter</title>
+  <style>
+    body {
+      width: 400px;
+      min-height: 300px;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #f9fafb;
+      margin: 0;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .status-container {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      margin: -16px -16px 0;
+      padding: 8px 16px;
+      background-color: #f9fafb;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .status {
+      font-size: 0.875rem;
+      text-align: center;
+      padding: 0.5rem;
+      border-radius: 0.375rem;
+      display: none;
+      margin: 0;
+      transition: all 0.3s ease;
+      opacity: 0;
+      transform: translateY(-100%);
+    }
+
+    .status.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .status.error {
+      color: #dc2626;
+      background-color: #fee2e2;
+    }
+
+    .status.success {
+      color: #059669;
+      background-color: #d1fae5;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .title {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #1f2937;
+      margin: 0;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #374151;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .format-buttons {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .format-button {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 0.25rem;
+      background: white;
+      cursor: pointer;
+      color: #374151;
+    }
+
+    .format-button:hover {
+      background-color: #f3f4f6;
+    }
+
+    .format-button.active {
+      background-color: #3b82f6;
+      color: white;
+      border-color: #3b82f6;
+    }
+
+    .input {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 0.375rem;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      outline: none;
+      box-sizing: border-box;
+    }
+
+    .input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+    }
+
+    .textarea {
+      height: 8rem;
+      resize: vertical;
+      font-family: monospace;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .button {
+      flex: 1;
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border: none;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .button-preview {
+      background-color: #3b82f6;
+      color: white;
+    }
+
+    .button-preview:hover {
+      background-color: #2563eb;
+    }
+
+    .button-save {
+      background-color: #10b981;
+      color: white;
+    }
+
+    .button-save:hover {
+      background-color: #059669;
+    }
+
+    .button-copy {
+      background-color: #6366f1;
+      color: white;
+    }
+
+    .button-copy:hover {
+      background-color: #4f46e5;
+    }
+
+    .button-import {
+      background-color: #8b5cf6;
+      color: white;
+    }
+
+    .button-import:hover {
+      background-color: #7c3aed;
+    }
+
+    /* 开关样式 */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 24px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 24px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: #3b82f6;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #importDialog {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      z-index: 1000;
+      width: 90%;
+      max-width: 360px;
+    }
+
+    .dialog-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+    }
+
+    .dialog-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .cookie-list {
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #d1d5db;
+      border-radius: 0.375rem;
+      margin-top: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .cookie-item {
+      padding: 0.5rem;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .cookie-item:last-child {
+      border-bottom: none;
+    }
+
+    .cookie-info {
+      flex: 1;
+      overflow: hidden;
+      margin-right: 1rem;
+    }
+
+    .cookie-name {
+      font-weight: 500;
+      color: #1f2937;
+    }
+
+    .cookie-value {
+      color: #6b7280;
+      font-size: 0.75rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .cookie-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    .action-button {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      border: none;
+      color: white;
+      transition: opacity 0.2s;
+    }
+
+    .action-button:hover {
+      opacity: 0.9;
+    }
+
+    .action-button:active {
+      opacity: 0.8;
+    }
+
+    .edit-button {
+      background-color: #6366f1;
+    }
+
+    .delete-button {
+      background-color: #ef4444;
+    }
+
+    .add-button {
+      background-color: #10b981;
+    }
+
+    .clear-all-button {
+      background-color: #ef4444;
+    }
+
+    .cookie-management {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    #editCookieDialog, #addCookieDialog {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      z-index: 1000;
+      width: 90%;
+      max-width: 360px;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .form-row .input {
+      flex: 1;
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .checkbox-row input[type="checkbox"] {
+      width: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="status-container">
+      <div id="status" class="status"></div>
+    </div>
+
+    <div class="header">
+      <h1 class="title">Cookie Helper</h1>
+      <label class="switch">
+        <input type="checkbox" id="enableSwitch">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="form-group">
+      <label class="label">刷新间隔 (秒)</label>
+      <input type="number" id="refreshInterval" min="1" class="input" value="60">
+    </div>
+
+    <div class="form-group">
+      <label class="label">上报地址</label>
+      <input type="url" id="reportUrl" class="input" placeholder="https://example.com/api">
+    </div>
+
+    <div class="form-group">
+      <label class="label">
+        Cookie 预览
+        <div class="format-buttons">
+          <button class="format-button active" data-format="json">JSON</button>
+          <button class="format-button" data-format="header">Header</button>
+          <button class="format-button" data-format="netscape">Netscape</button>
+        </div>
+      </label>
+      <textarea id="cookiePreview" class="input textarea" readonly></textarea>
+    </div>
+
+    <div class="button-group">
+      <button id="previewBtn" class="button button-preview">
+        预览 Cookie
+      </button>
+      <button id="copyBtn" class="button button-copy">
+        复制
+      </button>
+    </div>
+
+    <div class="button-group">
+      <button id="importBtn" class="button button-import">
+        导入 Cookie
+      </button>
+      <button id="saveBtn" class="button button-save">
+        保存配置
+      </button>
+    </div>
+
+    <div class="cookie-list" id="cookieList">
+      <!-- Cookie items will be added here dynamically -->
+    </div>
+
+    <div class="cookie-management">
+      <button id="clearAllBtn" class="action-button clear-all-button">删除所有 Cookie</button>
+      <button id="addCookieBtn" class="action-button add-button">添加新 Cookie</button>
+    </div>
+  </div>
+
+  <!-- Import Dialog -->
+  <div id="importDialog" class="hidden">
+    <div class="form-group">
+      <label class="label">
+        导入 Cookie
+        <div class="format-buttons">
+          <button class="format-button active" data-format="json">JSON</button>
+          <button class="format-button" data-format="header">Header</button>
+          <button class="format-button" data-format="netscape">Netscape</button>
+        </div>
+      </label>
+      <textarea id="importText" class="input textarea" placeholder="请粘贴要导入的 Cookie 数据..."></textarea>
+      <div class="dialog-buttons">
+        <button id="cancelImport" class="button">取消</button>
+        <button id="confirmImport" class="button button-save">导入</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Cookie Dialog -->
+  <div id="editCookieDialog" class="hidden">
+    <div class="form-group">
+      <label class="label">编辑 Cookie</label>
+      <div class="form-row">
+        <input type="text" id="editCookieName" class="input" placeholder="名称" readonly>
+      </div>
+      <div class="form-row">
+        <input type="text" id="editCookieValue" class="input" placeholder="值">
+      </div>
+      <div class="form-row">
+        <input type="text" id="editCookieDomain" class="input" placeholder="域名">
+      </div>
+      <div class="form-row">
+        <input type="text" id="editCookiePath" class="input" placeholder="路径">
+      </div>
+      <div class="form-row">
+        <input type="number" id="editCookieExpiration" class="input" placeholder="过期时间 (秒)">
+      </div>
+      <div class="form-row">
+        <select id="editCookieSameSite" class="input">
+          <option value="lax">Lax</option>
+          <option value="strict">Strict</option>
+          <option value="none">None</option>
+        </select>
+      </div>
+      <div class="checkbox-row">
+        <input type="checkbox" id="editCookieSecure">
+        <label for="editCookieSecure">Secure</label>
+        <input type="checkbox" id="editCookieHttpOnly">
+        <label for="editCookieHttpOnly">HttpOnly</label>
+      </div>
+      <div class="dialog-buttons">
+        <button id="cancelEdit" class="button">取消</button>
+        <button id="confirmEdit" class="button button-save">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Cookie Dialog -->
+  <div id="addCookieDialog" class="hidden">
+    <div class="form-group">
+      <label class="label">添加 Cookie</label>
+      <div class="form-row">
+        <input type="text" id="addCookieName" class="input" placeholder="名称">
+      </div>
+      <div class="form-row">
+        <input type="text" id="addCookieValue" class="input" placeholder="值">
+      </div>
+      <div class="form-row">
+        <input type="text" id="addCookieDomain" class="input" placeholder="域名">
+      </div>
+      <div class="form-row">
+        <input type="text" id="addCookiePath" class="input" placeholder="路径" value="/">
+      </div>
+      <div class="form-row">
+        <input type="number" id="addCookieExpiration" class="input" placeholder="过期时间 (秒)">
+      </div>
+      <div class="checkbox-row">
+        <input type="checkbox" id="addCookieSecure">
+        <label for="addCookieSecure">Secure</label>
+        <input type="checkbox" id="addCookieHttpOnly">
+        <label for="addCookieHttpOnly">HttpOnly</label>
+      </div>
+      <div class="dialog-buttons">
+        <button id="cancelAdd" class="button">取消</button>
+        <button id="confirmAdd" class="button button-save">添加</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="dialogOverlay" class="dialog-overlay hidden"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html> 

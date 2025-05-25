@@ -17,13 +17,17 @@
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
-      "128": "icons/icon128.png"
+      "128": "icons/icon128.png",
+      "150": "icons/icon150.png",
+      "200": "icons/icon200.png"
     }
   },
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
+    "128": "icons/icon128.png",
+    "150": "icons/icon150.png",
+    "200": "icons/icon200.png"
   },
   "background": {
     "service_worker": "background.js"

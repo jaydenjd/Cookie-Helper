@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie Helper 图标生成器 - 现代插件风格</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 900px;
+            width: 100%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        
+        .design-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin: 30px 0;
+        }
+        
+        .design-card {
+            border: 2px solid #eee;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .design-card:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        
+        .design-card.selected {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+        
+        .icon-preview {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .icon-size {
+            text-align: center;
+        }
+        
+        .icon-size h4 {
+            margin: 10px 0;
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .download-section {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        
+        .download-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .icon-container {
+            padding: 10px;
+            display: inline-block;
+        }
+        
+        /* 放大显示尺寸 */
+        .icon-container svg[width="16"] {
+            width: 48px;
+            height: 48px;
+        }
+        
+        .icon-container svg[width="48"] {
+            width: 96px;
+            height: 96px;
+        }
+        
+        .icon-container svg[width="128"] {
+            width: 160px;
+            height: 160px;
+        }
+        
+        .icon-container svg[width="150"] {
+            width: 180px;
+            height: 180px;
+        }
+        
+        .icon-container svg[width="200"] {
+            width: 200px;
+            height: 200px;
+        }
+        
+        .design-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .design-desc {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍪 Cookie Helper 现代插件图标</h1>
+        
+        <div class="design-options">
+            <!-- 设计方案1：现代插件风格 -->
+            <div class="design-card selected" data-design="modern">
+                <div class="design-title">现代插件风格</div>
+                <div class="design-desc">基于用户提供的设计，现代化插件图标风格</div>
+                <div class="icon-preview">
+                    <div class="icon-size">
+                        <h4>16×16</h4>
+                        <div class="icon-container">
+                            <svg width="16" height="16" viewBox="0 0 16 16">
+                                <defs>
+                                    <linearGradient id="cookieGrad16" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#FFA500;stop-opacity:1" />
+                                    </linearGradient>
+                                    <linearGradient id="shieldGrad16" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#87CEEB;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#4682B4;stop-opacity:1" />
+                                    </linearGradient>
+                                </defs>
+                                <!-- 外圆环 -->
+                                <circle cx="8" cy="8" r="7.5" fill="none" stroke="#2C3E50" stroke-width="1"/>
+                                <!-- 盾牌底部 -->
+                                <path d="M8 3 C10.5 3 12.5 4.5 12.5 6.5 L12.5 9 C12.5 11 10.5 12.5 8 12.5 C5.5 12.5 3.5 11 3.5 9 L3.5 6.5 C3.5 4.5 5.5 3 8 3 Z" fill="url(#shieldGrad16)"/>
+                                <!-- Cookie -->
+                                <circle cx="8" cy="6.5" r="2.5" fill="url(#cookieGrad16)"/>
+                                <!-- 巧克力豆 -->
+                                <circle cx="7" cy="6" r="0.3" fill="#8B4513"/>
+                                <circle cx="8.5" cy="6.8" r="0.3" fill="#654321"/>
+                                <circle cx="8" cy="7.2" r="0.2" fill="#8B4513"/>
+                                <!-- 上传箭头 -->
+                                <path d="M8 9.5 L8 11.5 M7 10.5 L8 9.5 L9 10.5" stroke="#fff" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div class="icon-size">
+                        <h4>48×48</h4>
+                        <div class="icon-container">
+                            <svg width="48" height="48" viewBox="0 0 48 48">
+                                <defs>
+                                    <linearGradient id="cookieGrad48" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+                                        <stop offset="50%" style="stop-color:#FFC107;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#FFA500;stop-opacity:1" />
+                                    </linearGradient>
+                                    <linearGradient id="shieldGrad48" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#87CEEB;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#4682B4;stop-opacity:1" />
+                                    </linearGradient>
+                                    <filter id="shadow48" x="-50%" y="-50%" width="200%" height="200%">
+                                        <feDropShadow dx="1" dy="1" stdDeviation="1" flood-color="#000" flood-opacity="0.2"/>
+                                    </filter>
+                                </defs>
+                                <!-- 外圆环 -->
+                                <circle cx="24" cy="24" r="22" fill="none" stroke="#2C3E50" stroke-width="3"/>
+                                <!-- 盾牌底部 -->
+                                <path d="M24 8 C30 8 36 12 36 18 L36 26 C36 32 30 36 24 36 C18 36 12 32 12 26 L12 18 C12 12 18 8 24 8 Z" fill="url(#shieldGrad48)" filter="url(#shadow48)"/>
+                                <!-- Cookie -->
+                                <circle cx="24" cy="18" r="7" fill="url(#cookieGrad48)" filter="url(#shadow48)"/>
+                                <!-- 巧克力豆 -->
+                                <circle cx="21" cy="16" r="1" fill="#8B4513"/>
+                                <circle cx="26" cy="18" r="1.2" fill="#654321"/>
+                                <circle cx="23" cy="20" r="0.8" fill="#8B4513"/>
+                                <circle cx="25.5" cy="16" r="0.6" fill="#654321"/>
+                                <circle cx="22" cy="18.5" r="0.5" fill="#8B4513"/>
+                                <!-- 上传箭头 -->
+                                <path d="M24 26 L24 32 M20 29 L24 25 L28 29" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div class="icon-size">
+                        <h4>128×128</h4>
+                        <div class="icon-container">
+                            <svg width="128" height="128" viewBox="0 0 128 128">
+                                <defs>
+                                    <linearGradient id="cookieGrad128" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+                                        <stop offset="30%" style="stop-color:#FFC107;stop-opacity:1" />
+                                        <stop offset="70%" style="stop-color:#FF9800;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#FFA500;stop-opacity:1" />
+                                    </linearGradient>
+                                    <linearGradient id="shieldGrad128" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#87CEEB;stop-opacity:1" />
+                                        <stop offset="50%" style="stop-color:#5DADE2;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#4682B4;stop-opacity:1" />
+                                    </linearGradient>
+                                    <filter id="shadow128" x="-50%" y="-50%" width="200%" height="200%">
+                                        <feDropShadow dx="2" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.3"/>
+                                    </filter>
+                                </defs>
+                                <!-- 外圆环 -->
+                                <circle cx="64" cy="64" r="60" fill="none" stroke="#2C3E50" stroke-width="6"/>
+                                <!-- 盾牌底部 -->
+                                <path d="M64 20 C80 20 96 30 96 45 L96 70 C96 85 80 95 64 95 C48 95 32 85 32 70 L32 45 C32 30 48 20 64 20 Z" fill="url(#shieldGrad128)" filter="url(#shadow128)"/>
+                                <!-- Cookie -->
+                                <circle cx="64" cy="45" r="18" fill="url(#cookieGrad128)" filter="url(#shadow128)"/>
+                                <!-- 巧克力豆 -->
+                                <circle cx="56" cy="40" r="2.5" fill="#8B4513"/>
+                                <circle cx="70" cy="45" r="3" fill="#654321"/>
+                                <circle cx="60" cy="50" r="2" fill="#8B4513"/>
+                                <circle cx="68" cy="38" r="1.5" fill="#654321"/>
+                                <circle cx="58" cy="46" r="1.2" fill="#8B4513"/>
+                                <circle cx="72" cy="50" r="1.8" fill="#654321"/>
+                                <circle cx="64" cy="52" r="1" fill="#8B4513"/>
+                                <!-- 上传箭头 -->
+                                <path d="M64 68 L64 85 M52 76 L64 64 L76 76" stroke="#fff" stroke-width="6" fill="none" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div class="icon-size">
+                        <h4>150×150</h4>
+                        <div class="icon-container">
+                            <svg width="150" height="150" viewBox="0 0 150 150">
+                                <defs>
+                                    <linearGradient id="cookieGrad150" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+                                        <stop offset="25%" style="stop-color:#FFC107;stop-opacity:1" />
+                                        <stop offset="60%" style="stop-color:#FF9800;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#FFA500;stop-opacity:1" />
+                                    </linearGradient>
+                                    <linearGradient id="shieldGrad150" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#87CEEB;stop-opacity:1" />
+                                        <stop offset="40%" style="stop-color:#5DADE2;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#4682B4;stop-opacity:1" />
+                                    </linearGradient>
+                                    <filter id="shadow150" x="-50%" y="-50%" width="200%" height="200%">
+                                        <feDropShadow dx="3" dy="3" stdDeviation="3" flood-color="#000" flood-opacity="0.3"/>
+                                    </filter>
+                                </defs>
+                                <!-- 外圆环 -->
+                                <circle cx="75" cy="75" r="70" fill="none" stroke="#2C3E50" stroke-width="7"/>
+                                <!-- 盾牌底部 -->
+                                <path d="M75 25 C95 25 115 37 115 55 L115 85 C115 103 95 115 75 115 C55 115 35 103 35 85 L35 55 C35 37 55 25 75 25 Z" fill="url(#shieldGrad150)" filter="url(#shadow150)"/>
+                                <!-- Cookie -->
+                                <circle cx="75" cy="55" r="22" fill="url(#cookieGrad150)" filter="url(#shadow150)"/>
+                                <!-- 巧克力豆 -->
+                                <circle cx="65" cy="48" r="3" fill="#8B4513"/>
+                                <circle cx="83" cy="55" r="3.5" fill="#654321"/>
+                                <circle cx="70" cy="62" r="2.5" fill="#8B4513"/>
+                                <circle cx="80" cy="45" r="2" fill="#654321"/>
+                                <circle cx="68" cy="56" r="1.5" fill="#8B4513"/>
+                                <circle cx="85" cy="62" r="2.2" fill="#654321"/>
+                                <circle cx="75" cy="64" r="1.2" fill="#8B4513"/>
+                                <circle cx="60" cy="54" r="1.8" fill="#654321"/>
+                                <!-- 上传箭头 -->
+                                <path d="M75 82 L75 102 M60 92 L75 77 L90 92" stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div class="icon-size">
+                        <h4>200×200</h4>
+                        <div class="icon-container">
+                            <svg width="200" height="200" viewBox="0 0 200 200">
+                                <defs>
+                                    <linearGradient id="cookieGrad200" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+                                        <stop offset="20%" style="stop-color:#FFC107;stop-opacity:1" />
+                                        <stop offset="50%" style="stop-color:#FF9800;stop-opacity:1" />
+                                        <stop offset="80%" style="stop-color:#FFA500;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#FF8F00;stop-opacity:1" />
+                                    </linearGradient>
+                                    <linearGradient id="shieldGrad200" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#87CEEB;stop-opacity:1" />
+                                        <stop offset="30%" style="stop-color:#5DADE2;stop-opacity:1" />
+                                        <stop offset="70%" style="stop-color:#3498DB;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#4682B4;stop-opacity:1" />
+                                    </linearGradient>
+                                    <filter id="shadow200" x="-50%" y="-50%" width="200%" height="200%">
+                                        <feDropShadow dx="4" dy="4" stdDeviation="4" flood-color="#000" flood-opacity="0.4"/>
+                                    </filter>
+                                </defs>
+                                <!-- 外圆环 -->
+                                <circle cx="100" cy="100" r="92" fill="none" stroke="#2C3E50" stroke-width="10"/>
+                                <!-- 盾牌底部 -->
+                                <path d="M100 30 C125 30 150 45 150 70 L150 110 C150 135 125 150 100 150 C75 150 50 135 50 110 L50 70 C50 45 75 30 100 30 Z" fill="url(#shieldGrad200)" filter="url(#shadow200)"/>
+                                <!-- Cookie -->
+                                <circle cx="100" cy="70" r="28" fill="url(#cookieGrad200)" filter="url(#shadow200)"/>
+                                <!-- 巧克力豆 -->
+                                <circle cx="85" cy="60" r="4" fill="#8B4513"/>
+                                <circle cx="112" cy="70" r="4.5" fill="#654321"/>
+                                <circle cx="92" cy="80" r="3.5" fill="#8B4513"/>
+                                <circle cx="108" cy="55" r="3" fill="#654321"/>
+                                <circle cx="88" cy="72" r="2.5" fill="#8B4513"/>
+                                <circle cx="115" cy="80" r="3.2" fill="#654321"/>
+                                <circle cx="100" cy="82" r="2" fill="#8B4513"/>
+                                <circle cx="78" cy="68" r="2.8" fill="#654321"/>
+                                <circle cx="105" cy="62" r="2.2" fill="#8B4513"/>
+                                <circle cx="95" cy="58" r="1.8" fill="#654321"/>
+                                <!-- 上传箭头 -->
+                                <path d="M100 105 L100 130 M80 118 L100 98 L120 118" stroke="#fff" stroke-width="9" fill="none" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="download-section">
+            <h3>下载现代插件图标</h3>
+            <button class="download-btn" onclick="downloadSelectedDesign(16)">下载 16×16</button>
+            <button class="download-btn" onclick="downloadSelectedDesign(48)">下载 48×48</button>
+            <button class="download-btn" onclick="downloadSelectedDesign(128)">下载 128×128</button>
+            <button class="download-btn" onclick="downloadSelectedDesign(150)">下载 150×150</button>
+            <button class="download-btn" onclick="downloadSelectedDesign(200)">下载 200×200</button>
+            <button class="download-btn" onclick="downloadAllSelectedSizes()">下载全部尺寸</button>
+        </div>
+        
+        <div style="margin-top: 30px; text-align: center; color: #666;">
+            <p><strong>现代插件图标设计特点：</strong></p>
+            <p>🍪 金黄色渐变Cookie，视觉醒目</p>
+            <p>🛡️ 蓝色盾牌背景，突出保护功能</p>
+            <p>⬆️ 白色上传箭头，表示数据传输</p>
+            <p>⭕ 深色圆环边框，专业现代感</p>
+            <p>✨ 阴影效果，增强立体感</p>
+        </div>
+    </div>
+
+    <script>
+        let selectedDesign = 'modern';
+        
+        // 设计选择
+        document.querySelectorAll('.design-card').forEach(card => {
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.design-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                selectedDesign = card.dataset.design;
+            });
+        });
+        
+        // 创建真正透明背景的canvas
+        function createTransparentCanvas(svgElement, size) {
+            return new Promise((resolve) => {
+                // 创建一个临时的SVG字符串，确保没有背景
+                const svgString = `
+                    <svg width="${size}" height="${size}" viewBox="${svgElement.getAttribute('viewBox')}" 
+                         xmlns="http://www.w3.org/2000/svg" style="background: transparent;">
+                        ${svgElement.innerHTML}
+                    </svg>
+                `;
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+                
+                // 设置高质量渲染
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                
+                const img = new Image();
+                img.onload = function() {
+                    ctx.drawImage(img, 0, 0, size, size);
+                    resolve(canvas);
+                };
+                
+                const svgBlob = new Blob([svgString], {type: 'image/svg+xml;charset=utf-8'});
+                const url = URL.createObjectURL(svgBlob);
+                img.src = url;
+            });
+        }
+        
+        async function downloadSelectedDesign(size) {
+            const selectedCard = document.querySelector('.design-card.selected');
+            const svgElement = selectedCard.querySelector(`svg[width="${size}"]`);
+            
+            if (!svgElement) {
+                alert('未找到对应尺寸的图标');
+                return;
+            }
+            
+            // 使用透明背景函数
+            const canvas = await createTransparentCanvas(svgElement, size);
+            
+            // 使用PNG格式并确保透明度
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `icon${size}.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 'image/png', 1.0);
+        }
+        
+        async function downloadAllSelectedSizes() {
+            const sizes = [16, 48, 128, 150, 200];
+            for (const size of sizes) {
+                await downloadSelectedDesign(size);
+                // 添加小延迟避免浏览器阻止多个下载
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        }
+    </script>
+</body>
+</html> 

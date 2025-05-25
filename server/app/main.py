@@ -130,7 +130,9 @@ async def home(
     client_ip: Optional[str] = None,
     is_valid_token: Optional[str] = None,
     start_date: Optional[str] = None,
-    end_date: Optional[str] = None
+    end_date: Optional[str] = None,
+    sort_by: Optional[str] = None,
+    sort_order: Optional[str] = None
 ):
     """
     显示主页，包含Cookie报告列表和筛选功能
@@ -190,8 +192,18 @@ async def home(
         total_pages = (total_count + per_page - 1) // per_page if total_count > 0 else 1
         page = min(max(1, page), total_pages)
         
-        # 应用排序和分页
-        query = query.order_by(models.CookieReport.timestamp.desc())
+        # 应用排序
+        if sort_by and hasattr(models.CookieReport, sort_by):
+            sort_column = getattr(models.CookieReport, sort_by)
+            if sort_order == 'asc':
+                query = query.order_by(sort_column.asc())
+            else:
+                query = query.order_by(sort_column.desc())
+        else:
+            # 默认按时间戳降序排序
+            query = query.order_by(models.CookieReport.timestamp.desc())
+        
+        # 应用分页
         query = query.offset((page - 1) * per_page).limit(per_page)
         
         # 执行查询
@@ -216,7 +228,9 @@ async def home(
                     "client_ip": client_ip,
                     "is_valid_token": is_valid_token,
                     "start_date": start_date,
-                    "end_date": end_date
+                    "end_date": end_date,
+                    "sort_by": sort_by,
+                    "sort_order": sort_order or 'desc'
                 }
             }
         )
@@ -236,7 +250,9 @@ async def get_cookie_reports(
     client_ip: Optional[str] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    export: Optional[str] = None
+    export: Optional[str] = None,
+    sort_by: Optional[str] = None,
+    sort_order: Optional[str] = None
 ):
     """
     获取 Cookie 报告列表，支持按多个条件过滤
@@ -311,8 +327,16 @@ async def get_cookie_reports(
         
         total_count = await db.scalar(count_query)
         
-        # 应用排序和分页
-        query = query.order_by(models.CookieReport.timestamp.desc())
+        # 应用排序
+        if sort_by and hasattr(models.CookieReport, sort_by):
+            sort_column = getattr(models.CookieReport, sort_by)
+            if sort_order == 'asc':
+                query = query.order_by(sort_column.asc())
+            else:
+                query = query.order_by(sort_column.desc())
+        else:
+            # 默认按时间戳降序排序
+            query = query.order_by(models.CookieReport.timestamp.desc())
         
         # 如果是导出请求，不应用分页
         if export == 'true':

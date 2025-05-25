@@ -80,6 +80,39 @@
         #detailsModal:not(.hidden) {
             display: block !important;
         }
+        
+        /* 自定义滚动条样式 */
+        .custom-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: #4a5568 #2d3748;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #2d3748;
+            border-radius: 4px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #4a5568;
+            border-radius: 4px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #718096;
+        }
+        
+        /* 确保pre标签内容不溢出 */
+        .json-content {
+            word-wrap: break-word;
+            word-break: break-all;
+            white-space: pre-wrap;
+            overflow-wrap: break-word;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 via-white to-purple-50 min-h-screen">
@@ -418,10 +451,10 @@
 
     <!-- 详情模态框 -->
     <div id="detailsModal" class="fixed inset-0 bg-black bg-opacity-50 modal-backdrop hidden z-50">
-        <div class="relative top-10 mx-auto p-0 w-11/12 max-w-4xl max-h-screen overflow-hidden">
-            <div class="bg-white rounded-xl shadow-2xl animate-fade-in">
+        <div class="relative top-5 mx-auto p-0 w-11/12 max-w-6xl">
+            <div class="bg-white rounded-xl shadow-2xl animate-fade-in max-h-[90vh] flex flex-col">
                 <!-- 模态框头部 -->
-                <div class="flex justify-between items-center p-6 border-b border-gray-200 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-t-xl">
+                <div class="flex justify-between items-center p-6 border-b border-gray-200 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-t-xl flex-shrink-0">
                     <h3 class="text-xl font-semibold">
                         <i class="fas fa-info-circle mr-2"></i>Cookie 详细信息
                     </h3>
@@ -430,17 +463,27 @@
                     </button>
                 </div>
                 
-                <!-- 模态框内容 -->
-                <div class="p-6 max-h-96 overflow-auto">
-                    <div id="detailsContent" class="space-y-4">
-                        <!-- 内容将通过 JavaScript 动态加载 -->
+                <!-- 模态框内的Toast通知 -->
+                <div id="modalToast" class="absolute top-20 right-6 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg hidden z-10 animate-fade-in">
+                    <div class="flex items-center">
+                        <i class="fas fa-check-circle mr-2"></i>
+                        <span id="modalToastMessage">操作成功</span>
+                    </div>
+                </div>
+                
+                <!-- 模态框内容 - 统一滚动区域 -->
+                <div class="overflow-y-auto flex-1 custom-scrollbar" style="max-height: calc(90vh - 140px);">
+                    <div class="p-6">
+                        <div id="detailsContent" class="space-y-6">
+                            <!-- 内容将通过 JavaScript 动态加载 -->
+                        </div>
                     </div>
                 </div>
                 
                 <!-- 模态框底部 -->
-                <div class="flex justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+                <div class="flex justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-xl flex-shrink-0">
                     <button onclick="copyDetailsToClipboard()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200">
-                        <i class="fas fa-copy mr-2"></i>复制数据
+                        <i class="fas fa-copy mr-2"></i>复制全部数据
                     </button>
                     <button onclick="hideDetails()" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors duration-200">
                         <i class="fas fa-times mr-2"></i>关闭
@@ -478,10 +521,11 @@
                 // 格式化显示数据
                 const content = document.getElementById('detailsContent');
                 content.innerHTML = `
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- 左侧：基本信息 -->
                         <div class="space-y-4">
                             <div class="bg-gray-50 p-4 rounded-lg">
-                                <h4 class="font-semibold text-gray-800 mb-2"><i class="fas fa-info mr-2"></i>基本信息</h4>
+                                <h4 class="font-semibold text-gray-800 mb-3"><i class="fas fa-info mr-2"></i>基本信息</h4>
                                 <div class="space-y-2 text-sm">
                                     <div><span class="font-medium">ID:</span> ${data.id}</div>
                                     <div><span class="font-medium">URL:</span> <span class="break-all">${data.url}</span></div>
@@ -496,28 +540,36 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <!-- 右侧：Cookie 信息 -->
                         <div class="space-y-4">
                             <div class="bg-gray-50 p-4 rounded-lg">
-                                <h4 class="font-semibold text-gray-800 mb-2">
-                                    <i class="fas fa-cookie mr-2"></i>Cookie 信息 (${data.cookies ? data.cookies.length : 0} 个)
-                                </h4>
-                                <div class="max-h-64 overflow-y-auto space-y-2">
-                                    ${data.cookies && data.cookies.length > 0 ? data.cookies.map(cookie => `
-                                        <div class="bg-white p-3 rounded border text-sm">
-                                            <div class="font-medium text-blue-600">${cookie.name || 'N/A'}</div>
-                                            <div class="text-gray-600 break-all">${cookie.value || 'N/A'}</div>
-                                            <div class="text-xs text-gray-500 mt-1">
-                                                域名: ${cookie.domain || 'N/A'} | 路径: ${cookie.path || '/'}
-                                            </div>
-                                        </div>
-                                    `).join('') : '<div class="text-gray-500 text-center py-4">没有 Cookie 数据</div>'}
+                                <div class="flex justify-between items-center mb-3">
+                                    <h4 class="font-semibold text-gray-800">
+                                        <i class="fas fa-cookie mr-2"></i>Cookie 信息 (${data.cookies ? data.cookies.length : 0} 个)
+                                    </h4>
+                                    <button onclick="copyCookieData()" class="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors">
+                                        <i class="fas fa-copy mr-1"></i>复制
+                                    </button>
+                                </div>
+                                <div class="bg-gray-900 text-green-400 p-4 rounded-lg custom-scrollbar max-h-80 border overflow-auto">
+                                    <pre id="cookieDataContent" class="json-content text-xs">${data.cookies && data.cookies.length > 0 ? JSON.stringify(data.cookies, null, 2) : '没有 Cookie 数据'}</pre>
                                 </div>
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- 原始 JSON 数据 -->
                     <div class="mt-6">
-                        <h4 class="font-semibold text-gray-800 mb-2"><i class="fas fa-code mr-2"></i>原始 JSON 数据</h4>
-                        <pre class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-auto text-sm max-h-48">${JSON.stringify(data, null, 2)}</pre>
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="font-semibold text-gray-800"><i class="fas fa-code mr-2"></i>原始 JSON 数据</h4>
+                            <button onclick="copyJsonData()" class="px-3 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 transition-colors">
+                                <i class="fas fa-copy mr-1"></i>复制
+                            </button>
+                        </div>
+                        <div class="bg-gray-900 text-green-400 p-4 rounded-lg custom-scrollbar max-h-96 border overflow-auto">
+                            <pre id="jsonDataContent" class="json-content text-sm">${JSON.stringify(data, null, 2)}</pre>
+                        </div>
                     </div>
                 `;
                 
@@ -542,10 +594,16 @@
         // 隐藏详情
         function hideDetails() {
             const modal = document.getElementById('detailsModal');
+            const modalToast = document.getElementById('modalToast');
             
             // 强制隐藏模态框
             modal.className = modal.className + ' hidden';
             modal.setAttribute('style', 'display: none !important;');
+            
+            // 隐藏模态框内的Toast通知
+            if (modalToast) {
+                modalToast.classList.add('hidden');
+            }
             
             // 恢复body滚动
             document.body.style.overflow = '';
@@ -575,11 +633,56 @@
             if (currentDetailsData) {
                 try {
                     await navigator.clipboard.writeText(JSON.stringify(currentDetailsData, null, 2));
-                    showToast('详情数据已复制到剪贴板');
+                    showModalToast('全部数据已复制到剪贴板');
                 } catch (error) {
                     console.error('Error copying details:', error);
-                    showToast('复制失败: ' + error.message, 'error');
+                    showModalToast('复制失败: ' + error.message, 'error');
                 }
+            }
+        }
+
+        // 复制Cookie数据到剪贴板
+        async function copyCookieData() {
+            if (currentDetailsData && currentDetailsData.cookies) {
+                try {
+                    await navigator.clipboard.writeText(JSON.stringify(currentDetailsData.cookies, null, 2));
+                    showModalToast('Cookie数据已复制到剪贴板');
+                } catch (error) {
+                    console.error('Error copying cookie data:', error);
+                    showModalToast('复制失败: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // 复制JSON数据到剪贴板
+        async function copyJsonData() {
+            if (currentDetailsData) {
+                try {
+                    await navigator.clipboard.writeText(JSON.stringify(currentDetailsData, null, 2));
+                    showModalToast('JSON数据已复制到剪贴板');
+                } catch (error) {
+                    console.error('Error copying JSON data:', error);
+                    showModalToast('复制失败: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // 显示模态框内的 Toast 通知
+        function showModalToast(message, type = 'success') {
+            const modalToast = document.getElementById('modalToast');
+            const modalToastMessage = document.getElementById('modalToastMessage');
+            
+            if (modalToast && modalToastMessage) {
+                modalToastMessage.textContent = message;
+                modalToast.className = `absolute top-20 right-6 px-4 py-2 rounded-lg shadow-lg z-10 animate-fade-in ${
+                    type === 'error' ? 'bg-red-500' : 'bg-green-500'
+                } text-white`;
+                
+                modalToast.classList.remove('hidden');
+                
+                setTimeout(() => {
+                    modalToast.classList.add('hidden');
+                }, 3000);
             }
         }
 

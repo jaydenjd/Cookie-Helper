@@ -58,7 +58,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     enabled: false,
     interval: 60,
     reportUrl: 'http://localhost:8000/api/cookies',
-    authorization: ''
+    authorization: '',
+    format: 'json'
   };
 
   // 加载保存的配置
@@ -70,6 +71,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   refreshInterval.value = currentConfig.interval;
   reportUrl.value = currentConfig.reportUrl;
   authorization.value = currentConfig.authorization || '';
+  currentFormat = currentConfig.format || 'json';
+
+  // 设置当前格式按钮的激活状态
+  formatButtons.forEach(button => {
+    if (button.dataset.format === currentFormat) {
+      button.classList.add('active');
+    } else {
+      button.classList.remove('active');
+    }
+  });
 
   // 格式化函数
   const formatters = {
@@ -578,13 +589,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 格式切换按钮点击事件
   formatButtons.forEach(button => {
-    button.addEventListener('click', () => {
+    button.addEventListener('click', async () => {
       formatButtons.forEach(btn => btn.classList.remove('active'));
       button.classList.add('active');
       currentFormat = button.dataset.format;
       if (currentCookies.length > 0) {
         updatePreview(currentCookies, currentFormat);
       }
+      
+      // 保存当前格式设置
+      const config = await chrome.storage.local.get(hostname);
+      const updatedConfig = {
+        ...config[hostname] || defaultConfig,
+        format: currentFormat
+      };
+      await chrome.storage.local.set({ [hostname]: updatedConfig });
     });
   });
 
@@ -806,7 +825,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       enabled: enableSwitch.checked,
       interval: parseInt(refreshInterval.value),
       reportUrl: reportUrl.value,
-      authorization: authorization.value
+      authorization: authorization.value,
+      format: currentFormat
     };
 
     try {
@@ -839,7 +859,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       enabled: enableSwitch.checked,
       interval: interval,
       reportUrl: reportUrl.value,
-      authorization: authorization.value
+      authorization: authorization.value,
+      format: currentFormat
     };
 
     try {
@@ -867,7 +888,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       enabled: enableSwitch.checked,
       interval: parseInt(refreshInterval.value),
       reportUrl: reportUrl.value,
-      authorization: authorization.value
+      authorization: authorization.value,
+      format: currentFormat
     };
 
     try {

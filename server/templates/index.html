@@ -5,117 +5,706 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cookie Reporter - 数据查看</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-</head>
-<body class="bg-gray-100 min-h-screen">
-    <div class="container mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold text-gray-800 mb-8">Cookie 数据查看</h1>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .filter-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .table-header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .status-valid {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .status-invalid {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .pagination-btn {
+            transition: all 0.2s ease-in-out;
+        }
+        .pagination-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .cookie-count-badge {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            color: #7c2d12;
+        }
+        .search-input:focus {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            border-color: #3b82f6;
+        }
+        .modal-backdrop {
+            backdrop-filter: blur(4px);
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .table-row:hover {
+            background-color: #f8fafc;
+            transform: scale(1.001);
+            transition: all 0.2s ease-in-out;
+        }
+        .filter-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
         
-        <!-- 搜索表单 -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-            <form class="flex gap-4 items-end">
-                <div class="flex-1">
-                    <label for="url" class="block text-sm font-medium text-gray-700 mb-1">URL 过滤</label>
-                    <input type="text" id="url" name="url" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+        /* 确保模态框正确显示 */
+        #detailsModal {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            z-index: 9999 !important;
+        }
+        
+        #detailsModal.hidden {
+            display: none !important;
+        }
+        
+        #detailsModal:not(.hidden) {
+            display: block !important;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 via-white to-purple-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- 页面标题 -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                <i class="fas fa-cookie-bite mr-3"></i>Cookie 数据管理中心
+            </h1>
+            <p class="text-gray-600">实时监控和管理您的 Cookie 数据</p>
+        </div>
+        
+        <!-- 统计卡片 -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-database text-2xl text-blue-500"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">总记录数</p>
+                        <p class="text-2xl font-semibold text-gray-900">{{ pagination.total }}</p>
+                    </div>
                 </div>
-                <div class="w-48">
-                    <label for="days" class="block text-sm font-medium text-gray-700 mb-1">时间范围（天）</label>
-                    <input type="number" id="days" name="days" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-check-circle text-2xl text-green-500"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">有效请求</p>
+                        <p class="text-2xl font-semibold text-gray-900">{{ reports|selectattr('is_valid_token')|list|length }}</p>
+                    </div>
                 </div>
-                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                    搜索
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-500">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-times-circle text-2xl text-red-500"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">无效请求</p>
+                        <p class="text-2xl font-semibold text-gray-900">{{ reports|rejectattr('is_valid_token')|list|length }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-layer-group text-2xl text-purple-500"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">当前页</p>
+                        <p class="text-2xl font-semibold text-gray-900">{{ pagination.current_page }}/{{ pagination.total_pages }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 高级筛选表单 -->
+        <div class="filter-section rounded-xl shadow-xl p-6 mb-8 border border-gray-200">
+            <div class="flex items-center mb-4">
+                <i class="fas fa-filter text-white mr-2"></i>
+                <h2 class="text-xl font-semibold text-white">筛选条件</h2>
+                <button id="toggleFilters" class="ml-auto text-white hover:text-gray-200">
+                    <i class="fas fa-chevron-up transition-transform duration-200"></i>
                 </button>
+            </div>
+            
+            <form id="filterForm" class="space-y-4">
+                <!-- 基础筛选 - 默认显示 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- URL 过滤 -->
+                    <div>
+                        <label for="url" class="block text-sm font-medium text-white mb-1">
+                            <i class="fas fa-link mr-1"></i>URL 过滤
+                        </label>
+                        <input type="text" id="url" name="url" value="{{ filters.url or '' }}" 
+                               placeholder="输入 URL 关键词..."
+                               class="search-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none transition-all duration-200">
+                    </div>
+
+                    <!-- Token 状态 -->
+                    <div>
+                        <label for="is_valid_token" class="block text-sm font-medium text-white mb-1">
+                            <i class="fas fa-key mr-1"></i>Token 状态
+                        </label>
+                        <select id="is_valid_token" name="is_valid_token" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">全部</option>
+                            <option value="true" {% if filters.is_valid_token == 'true' %}selected{% endif %}>有效</option>
+                            <option value="false" {% if filters.is_valid_token == 'false' %}selected{% endif %}>无效</option>
+                        </select>
+                    </div>
+
+                    <!-- 时间范围（天数） -->
+                    <div>
+                        <label for="days" class="block text-sm font-medium text-white mb-1">
+                            <i class="fas fa-calendar-alt mr-1"></i>最近天数
+                        </label>
+                        <select id="days" name="days" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">全部时间</option>
+                            <option value="1" {% if filters.days == 1 %}selected{% endif %}>最近 1 天</option>
+                            <option value="7" {% if filters.days == 7 %}selected{% endif %}>最近 7 天</option>
+                            <option value="30" {% if filters.days == 30 %}selected{% endif %}>最近 30 天</option>
+                            <option value="90" {% if filters.days == 90 %}selected{% endif %}>最近 90 天</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 高级筛选 - 可折叠 -->
+                <div id="advancedFilters" class="space-y-4 border-t border-white border-opacity-20 pt-4" style="display: none;">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- 客户端 IP -->
+                        <div>
+                            <label for="client_ip" class="block text-sm font-medium text-white mb-1">
+                                <i class="fas fa-network-wired mr-1"></i>客户端 IP
+                            </label>
+                            <input type="text" id="client_ip" name="client_ip" value="{{ filters.client_ip or '' }}" 
+                                   placeholder="输入 IP 地址..."
+                                   class="search-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none transition-all duration-200">
+                        </div>
+
+                        <!-- 开始日期 -->
+                        <div>
+                            <label for="start_date" class="block text-sm font-medium text-white mb-1">
+                                <i class="fas fa-calendar-plus mr-1"></i>开始日期
+                            </label>
+                            <input type="datetime-local" id="start_date" name="start_date" value="{{ filters.start_date or '' }}"
+                                   class="search-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none transition-all duration-200">
+                        </div>
+
+                        <!-- 结束日期 -->
+                        <div>
+                            <label for="end_date" class="block text-sm font-medium text-white mb-1">
+                                <i class="fas fa-calendar-minus mr-1"></i>结束日期
+                            </label>
+                            <input type="datetime-local" id="end_date" name="end_date" value="{{ filters.end_date or '' }}"
+                                   class="search-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none transition-all duration-200">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="flex flex-wrap gap-3 pt-4 border-t border-white border-opacity-20">
+                    <button type="submit" class="pagination-btn px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        <i class="fas fa-search mr-2"></i>搜索
+                    </button>
+                    <button type="button" onclick="clearFilters()" class="pagination-btn px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                        <i class="fas fa-eraser mr-2"></i>清除筛选
+                    </button>
+                    <button type="button" onclick="toggleAdvancedFilters()" class="pagination-btn px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2">
+                        <i class="fas fa-cog mr-2"></i>高级筛选
+                    </button>
+                    <button type="button" onclick="exportData()" class="pagination-btn px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                        <i class="fas fa-download mr-2"></i>导出数据
+                    </button>
+                    <button type="button" onclick="refreshData()" class="pagination-btn px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
+                        <i class="fas fa-sync-alt mr-2"></i>刷新
+                    </button>
+                </div>
             </form>
         </div>
 
-        <!-- 数据列表 -->
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <!-- 数据表格 -->
+        <div class="bg-white rounded-xl shadow-xl overflow-hidden border border-gray-200">
+            <div class="table-header px-6 py-4">
+                <h3 class="text-lg font-semibold text-white">
+                    <i class="fas fa-table mr-2"></i>Cookie 数据列表
+                    <span class="ml-2 text-sm font-normal opacity-90">(共 {{ pagination.total }} 条记录)</span>
+                </h3>
+            </div>
+            
+            {% if reports %}
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Id</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">URL</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">时间</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cookie 数量</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Token</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Token 是否有效</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <i class="fas fa-hashtag mr-1"></i>ID
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <i class="fas fa-link mr-1"></i>URL
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <i class="fas fa-clock mr-1"></i>时间
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <i class="fas fa-cookie mr-1"></i>Cookie 数量
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <i class="fas fa-network-wired mr-1"></i>客户端 IP
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <i class="fas fa-key mr-1"></i>Token 状态
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <i class="fas fa-cogs mr-1"></i>操作
+                            </th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         {% for report in reports %}
-                        <tr>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ report.id }}
+                        <tr class="table-row">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                #{{ report.id }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ report.url }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ report.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ report.cookies|length }}
+                            <td class="px-6 py-4 text-sm text-gray-900 max-w-xs">
+                                <div class="truncate" title="{{ report.url }}">
+                                    {{ report.url }}
+                                </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ report.client_ip }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ report.token }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ report.is_valid_token }}
+                                <div class="flex flex-col">
+                                    <span class="font-medium">{{ report.timestamp.strftime('%Y-%m-%d') }}</span>
+                                    <span class="text-xs text-gray-400">{{ report.timestamp.strftime('%H:%M:%S') }}</span>
+                                </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                <button onclick="showDetails('{{ report.id }}')" class="text-blue-600 hover:text-blue-900">
-                                    查看详情
-                                </button>
+                                <span class="cookie-count-badge status-badge">
+                                    <i class="fas fa-cookie-bite mr-1"></i>
+                                    {{ report.cookies|length }} 个
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <div class="flex items-center">
+                                    <i class="fas fa-globe mr-2 text-gray-400"></i>
+                                    {{ report.client_ip }}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                {% if report.is_valid_token %}
+                                    <span class="status-badge status-valid">
+                                        <i class="fas fa-check-circle mr-1"></i>有效
+                                    </span>
+                                {% else %}
+                                    <span class="status-badge status-invalid">
+                                        <i class="fas fa-times-circle mr-1"></i>无效
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <div class="flex space-x-2">
+                                    <button class="details-btn text-blue-600 hover:text-blue-900 hover:bg-blue-50 px-3 py-1 rounded-md transition-all duration-200"
+                                            data-id="{{ report.id }}">
+                                        <i class="fas fa-eye mr-1"></i>详情
+                                    </button>
+                                    <button class="copy-btn text-green-600 hover:text-green-900 hover:bg-green-50 px-3 py-1 rounded-md transition-all duration-200"
+                                            data-id="{{ report.id }}">
+                                        <i class="fas fa-copy mr-1"></i>复制
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
+            {% else %}
+            <div class="text-center py-12">
+                <i class="fas fa-search text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">没有找到数据</h3>
+                <p class="text-gray-500">尝试调整筛选条件或检查数据源</p>
+            </div>
+            {% endif %}
         </div>
+
+        <!-- 分页导航 -->
+        {% if pagination.total_pages > 1 %}
+        <div class="mt-8 flex items-center justify-between">
+            <div class="flex items-center text-sm text-gray-700">
+                <span>显示第 {{ (pagination.current_page - 1) * 20 + 1 }} - {{ pagination.current_page * 20 if pagination.current_page * 20 < pagination.total else pagination.total }} 条，共 {{ pagination.total }} 条记录</span>
+            </div>
+            
+            <nav class="flex items-center space-x-2">
+                <!-- 首页 -->
+                {% if pagination.has_prev %}
+                <a href="/?page=1{% if filters.url %}&url={{ filters.url }}{% endif %}{% if filters.client_ip %}&client_ip={{ filters.client_ip }}{% endif %}{% if filters.is_valid_token %}&is_valid_token={{ filters.is_valid_token }}{% endif %}{% if filters.days %}&days={{ filters.days }}{% endif %}{% if filters.start_date %}&start_date={{ filters.start_date }}{% endif %}{% if filters.end_date %}&end_date={{ filters.end_date }}{% endif %}" 
+                   class="pagination-btn px-3 py-2 text-sm bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                    <i class="fas fa-angle-double-left"></i>
+                </a>
+                {% endif %}
+
+                <!-- 上一页 -->
+                {% if pagination.has_prev %}
+                <a href="/?page={{ pagination.current_page-1 }}{% if filters.url %}&url={{ filters.url }}{% endif %}{% if filters.client_ip %}&client_ip={{ filters.client_ip }}{% endif %}{% if filters.is_valid_token %}&is_valid_token={{ filters.is_valid_token }}{% endif %}{% if filters.days %}&days={{ filters.days }}{% endif %}{% if filters.start_date %}&start_date={{ filters.start_date }}{% endif %}{% if filters.end_date %}&end_date={{ filters.end_date }}{% endif %}" 
+                   class="pagination-btn px-3 py-2 text-sm bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                    <i class="fas fa-angle-left mr-1"></i>上一页
+                </a>
+                {% endif %}
+
+                <!-- 页码 -->
+                {% set start_page = [1, pagination.current_page - 2]|max %}
+                {% set end_page = [pagination.total_pages, pagination.current_page + 2]|min %}
+                
+                {% if start_page > 1 %}
+                <span class="px-3 py-2 text-sm text-gray-500">...</span>
+                {% endif %}
+
+                {% for page_num in range(start_page, end_page + 1) %}
+                    {% if page_num == pagination.current_page %}
+                    <span class="px-3 py-2 text-sm bg-blue-600 text-white rounded-md">{{ page_num }}</span>
+                    {% else %}
+                    <a href="/?page={{ page_num }}{% if filters.url %}&url={{ filters.url }}{% endif %}{% if filters.client_ip %}&client_ip={{ filters.client_ip }}{% endif %}{% if filters.is_valid_token %}&is_valid_token={{ filters.is_valid_token }}{% endif %}{% if filters.days %}&days={{ filters.days }}{% endif %}{% if filters.start_date %}&start_date={{ filters.start_date }}{% endif %}{% if filters.end_date %}&end_date={{ filters.end_date }}{% endif %}" 
+                       class="pagination-btn px-3 py-2 text-sm bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                        {{ page_num }}
+                    </a>
+                    {% endif %}
+                {% endfor %}
+
+                {% if end_page < pagination.total_pages %}
+                <span class="px-3 py-2 text-sm text-gray-500">...</span>
+                {% endif %}
+
+                <!-- 下一页 -->
+                {% if pagination.has_next %}
+                <a href="/?page={{ pagination.current_page+1 }}{% if filters.url %}&url={{ filters.url }}{% endif %}{% if filters.client_ip %}&client_ip={{ filters.client_ip }}{% endif %}{% if filters.is_valid_token %}&is_valid_token={{ filters.is_valid_token }}{% endif %}{% if filters.days %}&days={{ filters.days }}{% endif %}{% if filters.start_date %}&start_date={{ filters.start_date }}{% endif %}{% if filters.end_date %}&end_date={{ filters.end_date }}{% endif %}" 
+                   class="pagination-btn px-3 py-2 text-sm bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                    下一页<i class="fas fa-angle-right ml-1"></i>
+                </a>
+                {% endif %}
+
+                <!-- 末页 -->
+                {% if pagination.has_next %}
+                <a href="/?page={{ pagination.total_pages }}{% if filters.url %}&url={{ filters.url }}{% endif %}{% if filters.client_ip %}&client_ip={{ filters.client_ip }}{% endif %}{% if filters.is_valid_token %}&is_valid_token={{ filters.is_valid_token }}{% endif %}{% if filters.days %}&days={{ filters.days }}{% endif %}{% if filters.start_date %}&start_date={{ filters.start_date }}{% endif %}{% if filters.end_date %}&end_date={{ filters.end_date }}{% endif %}" 
+                   class="pagination-btn px-3 py-2 text-sm bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                    <i class="fas fa-angle-double-right"></i>
+                </a>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
     </div>
 
     <!-- 详情模态框 -->
-    <div id="detailsModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden">
-        <div class="relative top-20 mx-auto p-5 border w-3/4 shadow-lg rounded-md bg-white">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-medium">Cookie 详情</h3>
-                <button onclick="hideDetails()" class="text-gray-500 hover:text-gray-700">
-                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
+    <div id="detailsModal" class="fixed inset-0 bg-black bg-opacity-50 modal-backdrop hidden z-50">
+        <div class="relative top-10 mx-auto p-0 w-11/12 max-w-4xl max-h-screen overflow-hidden">
+            <div class="bg-white rounded-xl shadow-2xl animate-fade-in">
+                <!-- 模态框头部 -->
+                <div class="flex justify-between items-center p-6 border-b border-gray-200 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-t-xl">
+                    <h3 class="text-xl font-semibold">
+                        <i class="fas fa-info-circle mr-2"></i>Cookie 详细信息
+                    </h3>
+                    <button onclick="hideDetails()" class="text-white hover:text-gray-200 transition-colors duration-200">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <!-- 模态框内容 -->
+                <div class="p-6 max-h-96 overflow-auto">
+                    <div id="detailsContent" class="space-y-4">
+                        <!-- 内容将通过 JavaScript 动态加载 -->
+                    </div>
+                </div>
+                
+                <!-- 模态框底部 -->
+                <div class="flex justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+                    <button onclick="copyDetailsToClipboard()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200">
+                        <i class="fas fa-copy mr-2"></i>复制数据
+                    </button>
+                    <button onclick="hideDetails()" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors duration-200">
+                        <i class="fas fa-times mr-2"></i>关闭
+                    </button>
+                </div>
             </div>
-            <pre id="detailsContent" class="bg-gray-100 p-4 rounded-md overflow-auto max-h-96"></pre>
+        </div>
+    </div>
+
+    <!-- Toast 通知 -->
+    <div id="toast" class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg hidden z-50 animate-fade-in">
+        <div class="flex items-center">
+            <i class="fas fa-check-circle mr-2"></i>
+            <span id="toastMessage">操作成功</span>
         </div>
     </div>
 
     <script>
+        let currentDetailsData = null;
+
+        // 显示详情
         async function showDetails(id) {
             try {
+                console.log('Fetching details for ID:', id);
                 const response = await fetch(`/api/cookies/${id}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 const data = await response.json();
-                document.getElementById('detailsContent').textContent = JSON.stringify(data, null, 2);
-                document.getElementById('detailsModal').classList.remove('hidden');
+                console.log('Received data:', data);
+                currentDetailsData = data;
+                
+                // 格式化显示数据
+                const content = document.getElementById('detailsContent');
+                content.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <h4 class="font-semibold text-gray-800 mb-2"><i class="fas fa-info mr-2"></i>基本信息</h4>
+                                <div class="space-y-2 text-sm">
+                                    <div><span class="font-medium">ID:</span> ${data.id}</div>
+                                    <div><span class="font-medium">URL:</span> <span class="break-all">${data.url}</span></div>
+                                    <div><span class="font-medium">时间:</span> ${new Date(data.timestamp).toLocaleString('zh-CN')}</div>
+                                    <div><span class="font-medium">客户端 IP:</span> ${data.client_ip}</div>
+                                    <div><span class="font-medium">Token:</span> <span class="break-all text-xs">${data.token || 'N/A'}</span></div>
+                                    <div><span class="font-medium">Token 状态:</span> 
+                                        <span class="status-badge ${data.is_valid_token ? 'status-valid' : 'status-invalid'}">
+                                            ${data.is_valid_token ? '有效' : '无效'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <h4 class="font-semibold text-gray-800 mb-2">
+                                    <i class="fas fa-cookie mr-2"></i>Cookie 信息 (${data.cookies ? data.cookies.length : 0} 个)
+                                </h4>
+                                <div class="max-h-64 overflow-y-auto space-y-2">
+                                    ${data.cookies && data.cookies.length > 0 ? data.cookies.map(cookie => `
+                                        <div class="bg-white p-3 rounded border text-sm">
+                                            <div class="font-medium text-blue-600">${cookie.name || 'N/A'}</div>
+                                            <div class="text-gray-600 break-all">${cookie.value || 'N/A'}</div>
+                                            <div class="text-xs text-gray-500 mt-1">
+                                                域名: ${cookie.domain || 'N/A'} | 路径: ${cookie.path || '/'}
+                                            </div>
+                                        </div>
+                                    `).join('') : '<div class="text-gray-500 text-center py-4">没有 Cookie 数据</div>'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <h4 class="font-semibold text-gray-800 mb-2"><i class="fas fa-code mr-2"></i>原始 JSON 数据</h4>
+                        <pre class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-auto text-sm max-h-48">${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+                
+                // 获取模态框元素
+                const modal = document.getElementById('detailsModal');
+                console.log('Modal element:', modal);
+                console.log('Modal classes before:', modal.className);
+                
+                // 移除hidden类并确保显示
+                modal.classList.remove('hidden');
+                modal.style.display = 'block';
+                modal.style.visibility = 'visible';
+                modal.style.opacity = '1';
+                
+                console.log('Modal classes after:', modal.className);
+                console.log('Modal style:', modal.style.cssText);
+                
+                // 确保模态框在最顶层
+                modal.style.zIndex = '9999';
+                
+                console.log('Modal should be visible now');
+                
             } catch (error) {
                 console.error('Error fetching details:', error);
+                showToast('获取详情失败: ' + error.message, 'error');
             }
         }
 
+        // 隐藏详情
         function hideDetails() {
-            document.getElementById('detailsModal').classList.add('hidden');
+            const modal = document.getElementById('detailsModal');
+            console.log('Hiding modal:', modal);
+            console.log('Modal classes before hide:', modal.className);
+            
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+            modal.style.visibility = 'hidden';
+            modal.style.opacity = '0';
+            
+            console.log('Modal classes after hide:', modal.className);
+            currentDetailsData = null;
         }
+
+        // 复制到剪贴板
+        async function copyToClipboard(id) {
+            try {
+                const response = await fetch(`/api/cookies/${id}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+                showToast('数据已复制到剪贴板');
+            } catch (error) {
+                console.error('Error copying to clipboard:', error);
+                showToast('复制失败: ' + error.message, 'error');
+            }
+        }
+
+        // 复制详情数据到剪贴板
+        async function copyDetailsToClipboard() {
+            if (currentDetailsData) {
+                try {
+                    await navigator.clipboard.writeText(JSON.stringify(currentDetailsData, null, 2));
+                    showToast('详情数据已复制到剪贴板');
+                } catch (error) {
+                    console.error('Error copying details:', error);
+                    showToast('复制失败: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // 清除筛选
+        function clearFilters() {
+            document.getElementById('filterForm').reset();
+            window.location.href = '/';
+        }
+
+        // 导出数据
+        function exportData() {
+            const params = new URLSearchParams(window.location.search);
+            params.set('export', 'true');
+            window.open(`/api/cookies?${params.toString()}`);
+        }
+
+        // 刷新数据
+        function refreshData() {
+            window.location.reload();
+        }
+
+        // 切换高级筛选
+        function toggleAdvancedFilters() {
+            const advancedFilters = document.getElementById('advancedFilters');
+            const button = event.target.closest('button');
+            const icon = button.querySelector('i');
+            
+            if (advancedFilters.style.display === 'none') {
+                advancedFilters.style.display = 'block';
+                button.innerHTML = '<i class="fas fa-cog mr-2"></i>隐藏高级';
+            } else {
+                advancedFilters.style.display = 'none';
+                button.innerHTML = '<i class="fas fa-cog mr-2"></i>高级筛选';
+            }
+        }
+
+        // 显示 Toast 通知
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            toastMessage.textContent = message;
+            toast.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in ${
+                type === 'error' ? 'bg-red-500' : 'bg-green-500'
+            } text-white`;
+            
+            toast.classList.remove('hidden');
+            
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        // 切换筛选器显示/隐藏
+        document.getElementById('toggleFilters').addEventListener('click', function() {
+            const form = document.getElementById('filterForm');
+            const icon = this.querySelector('i');
+            
+            if (form.style.display === 'none') {
+                form.style.display = 'block';
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            } else {
+                form.style.display = 'none';
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+            }
+        });
 
         // 点击模态框外部关闭
         document.getElementById('detailsModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 hideDetails();
             }
+        });
+
+        // ESC 键关闭模态框
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                hideDetails();
+            }
+        });
+
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检查是否有高级筛选条件
+            const urlParams = new URLSearchParams(window.location.search);
+            const hasAdvancedFilters = urlParams.has('client_ip') || 
+                                     urlParams.has('start_date') || 
+                                     urlParams.has('end_date');
+            
+            // 如果有高级筛选条件，显示高级筛选区域
+            if (hasAdvancedFilters) {
+                document.getElementById('advancedFilters').style.display = 'block';
+                const button = document.querySelector('button[onclick="toggleAdvancedFilters()"]');
+                if (button) {
+                    button.innerHTML = '<i class="fas fa-cog mr-2"></i>隐藏高级';
+                }
+            }
+            
+            // 添加事件委托处理详情和复制按钮
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.details-btn')) {
+                    const button = e.target.closest('.details-btn');
+                    const id = button.getAttribute('data-id');
+                    if (id) {
+                        showDetails(parseInt(id));
+                    }
+                } else if (e.target.closest('.copy-btn')) {
+                    const button = e.target.closest('.copy-btn');
+                    const id = button.getAttribute('data-id');
+                    if (id) {
+                        copyToClipboard(parseInt(id));
+                    }
+                }
+            });
+            
+            console.log('Page loaded, ready for interactions');
         });
     </script>
 </body>

@@ -224,7 +224,7 @@ async def home(
         logger.exception("Error rendering home page")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/cookies", response_model=List[schemas.CookieReportInDB])
+@app.get("/api/cookies")
 async def get_cookie_reports(
     request: Request,
     db: AsyncSession = Depends(models.get_db),
@@ -235,7 +235,8 @@ async def get_cookie_reports(
     is_valid_token: Optional[str] = None,
     client_ip: Optional[str] = None,
     start_date: Optional[str] = None,
-    end_date: Optional[str] = None
+    end_date: Optional[str] = None,
+    export: Optional[str] = None
 ):
     """
     获取 Cookie 报告列表，支持按多个条件过滤
@@ -280,25 +281,93 @@ async def get_cookie_reports(
         
         # 计算总记录数
         count_query = select(func.count()).select_from(models.CookieReport)
+        # 应用相同的过滤条件到计数查询
+        if url:
+            count_query = count_query.filter(models.CookieReport.url.contains(url))
+        if days and days.strip():
+            try:
+                days_int = int(days)
+                cutoff_date = datetime.utcnow() - timedelta(days=days_int)
+                count_query = count_query.filter(models.CookieReport.timestamp >= cutoff_date)
+            except ValueError:
+                pass
+        if is_valid_token is not None and is_valid_token.strip():
+            is_valid = is_valid_token.lower() == 'true'
+            count_query = count_query.filter(models.CookieReport.is_valid_token == is_valid)
+        if client_ip:
+            count_query = count_query.filter(models.CookieReport.client_ip.contains(client_ip))
+        if start_date:
+            try:
+                start_datetime = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+                count_query = count_query.filter(models.CookieReport.timestamp >= start_datetime)
+            except ValueError:
+                pass
+        if end_date:
+            try:
+                end_datetime = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+                count_query = count_query.filter(models.CookieReport.timestamp <= end_datetime)
+            except ValueError:
+                pass
+        
         total_count = await db.scalar(count_query)
         
         # 应用排序和分页
         query = query.order_by(models.CookieReport.timestamp.desc())
-        query = query.offset((page - 1) * per_page).limit(per_page)
         
-        result = await db.execute(query)
-        reports = result.scalars().all()
-        
-        # 计算总页数
-        total_pages = (total_count + per_page - 1) // per_page
-        
-        return {
-            "items": reports,
-            "total": total_count,
-            "page": page,
-            "per_page": per_page,
-            "total_pages": total_pages
-        }
+        # 如果是导出请求，不应用分页
+        if export == 'true':
+            # 导出所有数据，不分页
+            result = await db.execute(query)
+            reports = result.scalars().all()
+            
+            # 转换为JSON格式并返回
+            export_data = []
+            for report in reports:
+                export_data.append({
+                    "id": report.id,
+                    "url": report.url,
+                    "cookies": report.cookies,
+                    "timestamp": report.timestamp.isoformat(),
+                    "client_ip": report.client_ip,
+                    "token": report.token,
+                    "is_valid_token": report.is_valid_token
+                })
+            
+            return JSONResponse(content=export_data)
+        else:
+            # 正常分页查询
+            query = query.offset((page - 1) * per_page).limit(per_page)
+            result = await db.execute(query)
+            reports = result.scalars().all()
+            
+            # 计算总页数
+            total_pages = (total_count + per_page - 1) // per_page if total_count > 0 else 1
+            
+            # 返回分页数据
+            response_data = {
+                "records": [],
+                "pagination": {
+                    "current_page": page,
+                    "total_pages": total_pages,
+                    "total": total_count,
+                    "has_prev": page > 1,
+                    "has_next": page < total_pages
+                }
+            }
+            
+            for report in reports:
+                response_data["records"].append({
+                    "id": report.id,
+                    "url": report.url,
+                    "cookies": report.cookies,
+                    "timestamp": report.timestamp.isoformat(),
+                    "client_ip": report.client_ip,
+                    "token": report.token,
+                    "is_valid_token": report.is_valid_token
+                })
+            
+            return JSONResponse(content=response_data)
+            
     except Exception as e:
         logger.exception("Error retrieving cookie reports")
         raise HTTPException(status_code=500, detail=str(e))

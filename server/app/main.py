@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Dict
 import json
 import logging
@@ -18,6 +18,9 @@ logger = logging.getLogger(__name__)
 
 # 设置允许的token
 ALLOWED_TOKEN = os.getenv('COOKIE_HELPER_TOKEN', 'your-secret-token')
+
+# 北京时区
+BEIJING_TZ = timezone(timedelta(hours=8))
 
 app = FastAPI(title="Cookie Reporter API")
 
@@ -67,10 +70,19 @@ async def create_cookie_report(
         if not is_valid_token:
             logger.warning(f"Invalid token attempt from IP: {client_ip}")
             # 仍然记录无效的请求，但返回错误
+            try:
+                # 插件发送的是UTC时间，需要转换为北京时间
+                utc_timestamp = datetime.fromisoformat(raw_data['timestamp'].replace('Z', '+00:00'))
+                # 转换为北京时间
+                beijing_timestamp = utc_timestamp.astimezone(BEIJING_TZ).replace(tzinfo=None)
+                invalid_timestamp = beijing_timestamp
+            except ValueError:
+                invalid_timestamp = datetime.now()  # 如果时间戳解析失败，使用当前北京时间
+            
             db_report = models.CookieReport(
                 url=raw_data['url'],
                 cookies=raw_data['cookies'],
-                timestamp=datetime.fromisoformat(raw_data['timestamp'].replace('Z', '+00:00')),
+                timestamp=invalid_timestamp,
                 client_ip=client_ip,
                 token=token,
                 is_valid_token=False
@@ -81,7 +93,11 @@ async def create_cookie_report(
 
         # 解析时间戳
         try:
-            timestamp = datetime.fromisoformat(raw_data['timestamp'].replace('Z', '+00:00'))
+            # 插件发送的是UTC时间，需要转换为北京时间
+            utc_timestamp = datetime.fromisoformat(raw_data['timestamp'].replace('Z', '+00:00'))
+            # 转换为北京时间
+            beijing_timestamp = utc_timestamp.astimezone(BEIJING_TZ).replace(tzinfo=None)
+            timestamp = beijing_timestamp
         except ValueError as e:
             logger.error(f"Error parsing timestamp: {e}")
             raise HTTPException(status_code=400, detail="Invalid timestamp format")
@@ -151,7 +167,8 @@ async def home(
         if days and days.strip():
             try:
                 days_int = int(days)
-                cutoff_date = datetime.utcnow() - timedelta(days=days_int)
+                # 使用北京时间计算截止日期
+                cutoff_date = datetime.now() - timedelta(days=days_int)
                 query = query.filter(models.CookieReport.timestamp >= cutoff_date)
                 count_query = count_query.filter(models.CookieReport.timestamp >= cutoff_date)
             except ValueError:
@@ -268,7 +285,8 @@ async def get_cookie_reports(
         if days and days.strip():
             try:
                 days_int = int(days)
-                cutoff_date = datetime.utcnow() - timedelta(days=days_int)
+                # 使用北京时间计算截止日期
+                cutoff_date = datetime.now() - timedelta(days=days_int)
                 query = query.filter(models.CookieReport.timestamp >= cutoff_date)
             except ValueError:
                 pass  # 忽略无效的天数格式
@@ -303,7 +321,7 @@ async def get_cookie_reports(
         if days and days.strip():
             try:
                 days_int = int(days)
-                cutoff_date = datetime.utcnow() - timedelta(days=days_int)
+                cutoff_date = datetime.now() - timedelta(days=days_int)
                 count_query = count_query.filter(models.CookieReport.timestamp >= cutoff_date)
             except ValueError:
                 pass
